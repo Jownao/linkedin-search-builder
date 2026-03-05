@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construtor de Buscas Booleana</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #22c55e;
+    --warn: #f59e0b;
+    --danger: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --tag-bg: #1a1a2e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Syne', sans-serif; min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,229,255,0.07), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,58,237,0.05), transparent);
+  }
+  header { text-align: center; margin-bottom: 2.5rem; position: relative; }
+  .lang-toggle {
+    position: absolute; top: 0; right: 0;
+    display: flex; align-items: center; gap: 0.2rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 30px; padding: 0.3rem 0.4rem;
+    font-family: 'Space Mono', monospace; font-size: 0.72rem;
+    cursor: pointer; transition: border-color 0.2s; user-select: none;
+  }
+  .lang-toggle:hover { border-color: var(--accent); }
+  .lang-opt { padding: 0.15rem 0.5rem; border-radius: 20px; transition: all 0.15s; color: var(--muted); }
+  .lang-opt.active { background: var(--accent); color: #000; font-weight: 700; }
+  .logo {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    font-size: 0.7rem; font-family: 'Space Mono', monospace;
+    letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 0.5rem;
+  }
+  h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+  h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; font-family: 'Space Mono', monospace; }
+
+  .limit-banner {
+    max-width: 960px; margin: 0 auto 1.5rem;
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-left: 3px solid var(--warn);
+    border-radius: 10px; padding: 1.1rem 1.3rem;
+  }
+  .limit-banner-title {
+    font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--warn); font-family: 'Space Mono', monospace;
+    margin-bottom: 0.6rem;
+  }
+  .limit-banner p {
+    font-size: 0.77rem; color: #cbd5e1; line-height: 1.7;
+    font-family: 'Space Mono', monospace;
+  }
+  .limit-banner strong { color: var(--warn); }
+  .limit-banner code {
+    background: rgba(0,0,0,0.4); border: 1px solid #2a2a3a;
+    border-radius: 4px; padding: 0.1rem 0.35rem;
+    font-size: 0.72rem; color: var(--danger);
+  }
+  .limit-rules {
+    margin-top: 0.85rem; display: flex; flex-wrap: wrap; gap: 0.5rem;
+  }
+  .limit-rule {
+    background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.3rem 0.8rem;
+    font-size: 0.68rem; font-family: 'Space Mono', monospace; color: var(--muted);
+    display: flex; align-items: center; gap: 0.45rem;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .dot-red { background: var(--danger); }
+  .dot-yellow { background: var(--warn); }
+  .dot-green { background: var(--accent3); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 960px; margin: 0 auto; }
+  @media(max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+  .card.full { grid-column: 1 / -1; }
+  .card-title {
+    font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); font-family: 'Space Mono', monospace;
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .card-title::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+  .section-hint { font-size: 0.68rem; color: var(--muted); font-family: 'Space Mono', monospace; margin-top: -0.5rem; margin-bottom: 0.75rem; }
+  input[type="text"] {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.6rem 0.9rem; color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 0.85rem;
+    outline: none; transition: border-color 0.2s; margin-bottom: 1rem;
+  }
+  input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,255,0.1); }
+  .tags-container {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; min-height: 40px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.5rem; margin-bottom: 0.6rem;
+  }
+  .tag {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: var(--tag-bg); border: 1px solid var(--border);
+    border-radius: 20px; padding: 0.2rem 0.6rem;
+    font-size: 0.75rem; font-family: 'Space Mono', monospace;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .tag.active { background: rgba(0,229,255,0.1); border-color: var(--accent); color: var(--accent); }
+  .tag.active-purple { background: rgba(124,58,237,0.15); border-color: var(--accent2); color: #a78bfa; }
+  .tag:hover { opacity: 0.8; }
+  .tag-remove { font-size: 0.9rem; opacity: 0.5; cursor: pointer; line-height: 1; }
+  .tag-remove:hover { opacity: 1; color: var(--danger); }
+  .input-row { display: flex; gap: 0.5rem; }
+  .input-row input { margin-bottom: 0; flex: 1; }
+  .btn-add {
+    background: var(--accent); color: #000; border: none; border-radius: 8px;
+    padding: 0 1rem; font-family: 'Space Mono', monospace; font-size: 0.85rem;
+    font-weight: 700; cursor: pointer; transition: opacity 0.2s; white-space: nowrap;
+  }
+  .btn-add:hover { opacity: 0.85; }
+  .presets { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .preset-chip {
+    background: transparent; border: 1px solid var(--border); border-radius: 20px;
+    padding: 0.2rem 0.7rem; font-size: 0.72rem; font-family: 'Space Mono', monospace;
+    color: var(--muted); cursor: pointer; transition: all 0.15s;
+  }
+  .preset-chip:hover { border-color: var(--accent2); color: #a78bfa; }
+  .toggle-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .toggle-label { font-size: 0.76rem; color: var(--muted); font-family: 'Space Mono', monospace; flex: 1; line-height: 1.4; }
+  .toggle { position: relative; width: 38px; height: 20px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; cursor: pointer; transition: 0.2s; }
+  .slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
+  input:checked + .slider { background: rgba(0,229,255,0.3); }
+  input:checked + .slider::before { transform: translateX(18px); background: var(--accent); }
+
+  .queries-section { max-width: 960px; margin: 1.2rem auto 0; }
+  .queries-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+  .queries-title { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent3); font-family: 'Space Mono', monospace; display: flex; align-items: center; gap: 0.5rem; }
+  .queries-title::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent3); border-radius: 50%; }
+  .queries-count { font-size: 0.72rem; font-family: 'Space Mono', monospace; color: var(--muted); margin-top: 0.3rem; }
+  .queries-count strong { color: var(--accent3); }
+  .header-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .btn-open-all {
+    background: rgba(34,197,94,0.1); border: 1px solid var(--accent3); color: var(--accent3);
+    border-radius: 8px; padding: 0.5rem 1rem; font-family: 'Space Mono', monospace;
+    font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-open-all:hover { background: rgba(34,197,94,0.2); }
+  .btn-clear-all {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 8px; padding: 0.5rem 1rem; font-family: 'Space Mono', monospace;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-clear-all:hover { border-color: var(--danger); color: var(--danger); }
+
+  .query-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 0.75rem;
+    transition: border-color 0.2s; animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+  .query-card:hover { border-color: rgba(0,229,255,0.25); }
+  .query-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.7rem; flex-wrap: wrap; gap: 0.5rem; }
+  .query-num { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-family: 'Space Mono', monospace; display: flex; align-items: center; gap: 0.5rem; }
+  .qbadge { border: 1px solid; border-radius: 4px; padding: 0.1rem 0.45rem; font-size: 0.62rem; font-family: 'Space Mono', monospace; }
+  .qbadge-safe { border-color: rgba(34,197,94,0.4); color: var(--accent3); }
+  .qbadge-warn { border-color: rgba(245,158,11,0.4); color: var(--warn); }
+  .query-label { font-size: 0.68rem; font-family: 'Space Mono', monospace; color: var(--muted); }
+  .query-text {
+    background: #090910; border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.85rem 1rem; font-family: 'Space Mono', monospace; font-size: 0.74rem;
+    color: #94a3b8; word-break: break-word; line-height: 1.7; margin-bottom: 0.8rem;
+  }
+  .q-role { color: var(--accent); }
+  .q-tech { color: #a78bfa; }
+  .q-vaga { color: var(--accent3); }
+  .q-model { color: var(--warn); }
+  .q-op { color: #374151; font-weight: 700; }
+  .q-not { color: var(--danger); }
+  .query-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+  .query-meta { font-size: 0.65rem; font-family: 'Space Mono', monospace; color: var(--muted); display: flex; gap: 0.75rem; }
+  .query-meta span strong { color: var(--text); }
+  .query-actions { display: flex; gap: 0.5rem; }
+  .qbtn {
+    padding: 0.38rem 0.85rem; border-radius: 6px; font-family: 'Space Mono', monospace;
+    font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.3rem;
+  }
+  .qbtn-copy { background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.3); color: var(--accent); }
+  .qbtn-copy:hover { background: rgba(0,229,255,0.18); }
+  .qbtn-li { background: #0a66c2; color: white; }
+  .qbtn-li:hover { background: #0854a0; }
+
+  .empty-state { text-align: center; padding: 2.5rem; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; }
+  .empty-state p { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.8rem; }
+
+  .copied-flash {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #000; padding: 0.6rem 1.5rem;
+    border-radius: 30px; font-family: 'Space Mono', monospace; font-size: 0.8rem;
+    font-weight: 700; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+  }
+  .copied-flash.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="lang-toggle" onclick="toggleLang()">
+    <span class="lang-opt active" id="opt-pt">🇧🇷 PT</span>
+    <span class="lang-opt" id="opt-en">🇺🇸 EN</span>
+  </div>
+  <div class="logo">🔍 LinkedIn Search Builder</div>
+  <h1 id="hdr-h1">Construtor de <span>Busca Booleana</span></h1>
+  <p class="subtitle" id="hdr-subtitle">// divide para conquistar • sem quebrar o buscador</p>
+</header>
+
+<!-- BANNER EXPLICATIVO DO LIMITE -->
+<div class="limit-banner">
+  <div class="limit-banner-title" id="banner-title">⚠️ Por que o LinkedIn quebra buscas longas?</div>
+  <p id="banner-body">
+    O LinkedIn tem <strong>limites não documentados</strong> no buscador booleano. Quando você encadeia muitos termos numa query só,
+    o algoritmo <strong>silenciosamente ignora parte deles</strong> — e você perde vagas sem perceber.<br><br>
+    Exemplo que quebra: <code>(Eng. Dados) AND (Vaga OR Oportunidade OR Hiring OR "We're hiring" OR Contratação)</code><br>
+    O apóstrofo em <code>"We're"</code> dentro de aspas <strong>quebra o parser</strong>, e muitos OR seguidos <strong>excedem o limite interno</strong> do LinkedIn.
+  </p>
+  <div class="limit-rules">
+    <div class="limit-rule"><span class="dot dot-red"></span><span class="limit-rule-text">Mais de ~3–4 OR num grupo = resultados incompletos</span></div>
+    <div class="limit-rule"><span class="dot dot-red"></span><span class="limit-rule-text">Apóstrofo dentro de aspas = parser quebra</span></div>
+    <div class="limit-rule"><span class="dot dot-yellow"></span><span class="limit-rule-text">Query muito longa (~200+ chars) = LinkedIn trunca silenciosamente</span></div>
+    <div class="limit-rule"><span class="dot dot-green"></span><span class="limit-rule-text">Solução: várias queries curtas em abas separadas</span></div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <div class="card">
+    <div class="card-title" id="ct-role">Cargo / Função</div>
+    <p class="section-hint" id="hint-role">cada cargo gera uma linha de queries própria</p>
+    <div class="input-row">
+      <input type="text" id="input-role" placeholder="ex: Engenheiro de Dados" onkeydown="if(event.key==='Enter') addTag('roles',this)">
+      <button class="btn-add" onclick="addTag('roles',document.getElementById('input-role'))">+</button>
+    </div>
+    <div class="tags-container" id="tags-roles"></div>
+    <div class="presets" id="presets-roles">
+      <span class="preset-chip" onclick="addPreset('roles','Engenheiro de Dados')">Eng. Dados</span>
+      <span class="preset-chip" onclick="addPreset('roles','Data Engineer')">Data Engineer</span>
+      <span class="preset-chip" onclick="addPreset('roles','Analista de Dados')">Analista Dados</span>
+      <span class="preset-chip" onclick="addPreset('roles','Data Analyst')">Data Analyst</span>
+      <span class="preset-chip" onclick="addPreset('roles','Cientista de Dados')">Cientista Dados</span>
+      <span class="preset-chip" onclick="addPreset('roles','Data Scientist')">Data Scientist</span>
+      <span class="preset-chip" onclick="addPreset('roles','Desenvolvedor Python')">Dev Python</span>
+      <span class="preset-chip" onclick="addPreset('roles','Backend Developer')">Backend Dev</span>
+      <span class="preset-chip" onclick="addPreset('roles','Full Stack')">Full Stack</span>
+      <span class="preset-chip" onclick="addPreset('roles','DevOps')">DevOps</span>
+      <span class="preset-chip" onclick="addPreset('roles','MLOps')">MLOps</span>
+      <span class="preset-chip" onclick="addPreset('roles','Analytics Engineer')">Analytics Eng</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="ct-tech">Tecnologias / Stacks</div>
+    <p class="section-hint" id="hint-tech">agrupadas de 3 em 3 — cada grupo vira uma query</p>
+    <div class="input-row">
+      <input type="text" id="input-tech" placeholder="ex: Python, Databricks, AWS" onkeydown="if(event.key==='Enter') addTag('techs',this)">
+      <button class="btn-add" onclick="addTag('techs',document.getElementById('input-tech'))">+</button>
+    </div>
+    <div class="tags-container" id="tags-techs"></div>
+    <div class="presets">
+      <span class="preset-chip" onclick="addPreset('techs','Python')">Python</span>
+      <span class="preset-chip" onclick="addPreset('techs','Spark')">Spark</span>
+      <span class="preset-chip" onclick="addPreset('techs','Databricks')">Databricks</span>
+      <span class="preset-chip" onclick="addPreset('techs','AWS')">AWS</span>
+      <span class="preset-chip" onclick="addPreset('techs','GCP')">GCP</span>
+      <span class="preset-chip" onclick="addPreset('techs','Azure')">Azure</span>
+      <span class="preset-chip" onclick="addPreset('techs','SQL')">SQL</span>
+      <span class="preset-chip" onclick="addPreset('techs','dbt')">dbt</span>
+      <span class="preset-chip" onclick="addPreset('techs','Airflow')">Airflow</span>
+      <span class="preset-chip" onclick="addPreset('techs','Kafka')">Kafka</span>
+      <span class="preset-chip" onclick="addPreset('techs','Docker')">Docker</span>
+      <span class="preset-chip" onclick="addPreset('techs','Kubernetes')">K8s</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="ct-model">Modelo de Trabalho</div>
+    <p class="section-hint" id="hint-model">adicionado como AND em cada query</p>
+    <div class="tags-container" id="tags-model" style="margin-bottom:0">
+      <span class="tag" onclick="toggleGroup('models','Remoto','tags-model','active-purple')">Remoto</span>
+      <span class="tag" onclick="toggleGroup('models','Remote','tags-model','active-purple')">Remote</span>
+      <span class="tag" onclick="toggleGroup('models','Híbrido','tags-model','active-purple')">Híbrido</span>
+      <span class="tag" onclick="toggleGroup('models','Presencial','tags-model','active-purple')">Presencial</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="ct-contract">Tipo de Contratação</div>
+    <p class="section-hint" id="hint-contract">adicionado como AND em cada query</p>
+    <div class="tags-container" id="tags-contract" style="margin-bottom:0">
+      <span class="tag" onclick="toggleGroup('contracts','CLT','tags-contract','active-purple')">CLT</span>
+      <span class="tag" onclick="toggleGroup('contracts','PJ','tags-contract','active-purple')">PJ</span>
+      <span class="tag" onclick="toggleGroup('contracts','Freelance','tags-contract','active-purple')">Freelance</span>
+      <span class="tag" onclick="toggleGroup('contracts','Estágio','tags-contract','active-purple')">Estágio</span>
+      <span class="tag" onclick="toggleGroup('contracts','Trainee','tags-contract','active-purple')">Trainee</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="ct-sen">Senioridade</div>
+    <p class="section-hint" id="hint-sen">adicionado como AND em cada query</p>
+    <div class="tags-container" id="tags-seniority" style="margin-bottom:0">
+      <span class="tag" onclick="toggleGroup('seniority','Junior','tags-seniority','active')">Junior</span>
+      <span class="tag" onclick="toggleGroup('seniority','Pleno','tags-seniority','active')">Pleno</span>
+      <span class="tag" onclick="toggleGroup('seniority','Senior','tags-seniority','active')">Senior</span>
+      <span class="tag" onclick="toggleGroup('seniority','Lead','tags-seniority','active')">Lead</span>
+      <span class="tag" onclick="toggleGroup('seniority','Staff','tags-seniority','active')">Staff</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="ct-vaga">Termos de Vaga</div>
+    <p class="section-hint" id="hint-vaga">cada grupo fica seguro — max 3 termos simples, sem apóstrofo</p>
+    <div class="toggle-row">
+      <span class="toggle-label" id="tog-a-label">
+        grupo A &nbsp;<span style="color:var(--accent3);font-size:0.7em">Vaga · Oportunidade · Hiring</span>
+      </span>
+      <label class="toggle"><input type="checkbox" id="tog-a" checked onchange="buildQueries()"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label" id="tog-b-label">
+        grupo B &nbsp;<span style="color:var(--accent3);font-size:0.7em">Contratando · Recrutamento · Aberta</span>
+      </span>
+      <label class="toggle"><input type="checkbox" id="tog-b" onchange="buildQueries()"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label" id="tog-exc-label">excluir cursos e bootcamps &nbsp;<code style="font-size:0.65rem;background:#0d0d16;border:1px solid #2a2a3a;border-radius:3px;padding:0.1rem 0.3rem;color:var(--danger)">NOT</code></span>
+      <label class="toggle"><input type="checkbox" id="tog-exc" onchange="buildQueries()"><span class="slider"></span></label>
+    </div>
+  </div>
+
+</div>
+
+<!-- QUERIES GERADAS -->
+<div class="queries-section">
+  <div class="queries-header">
+    <div>
+      <div class="queries-title" id="queries-title-txt">Queries geradas</div>
+      <div class="queries-count" id="q-count">configure os filtros acima</div>
+    </div>
+    <div class="header-btns">
+      <button class="btn-open-all" id="btn-open-all" onclick="openAll()">🚀 Abrir todas no LinkedIn</button>
+      <button class="btn-clear-all" id="btn-clear-all-btn" onclick="clearAll()">✕ Limpar tudo</button>
+    </div>
+  </div>
+  <div id="q-list">
+    <div class="empty-state"><p>← configure os filtros acima para gerar as queries</p></div>
+  </div>
+</div>
+
+<div class="copied-flash" id="flash">✓ Copiado!</div>
+
+<script>
+const S = { roles:[], techs:[], models:[], contracts:[], seniority:[] };
+const VAGA_A = ['Vaga','Oportunidade','Hiring'];
+const VAGA_B = ['Contratando','Recrutamento','Aberta'];
+
+function addTag(g, el) {
+  const v = el.value.trim(); if (!v) return;
+  v.split(',').forEach(x => { const t=x.trim(); if(t && !S[g].includes(t)) S[g].push(t); });
+  el.value = ''; renderTags(g); buildQueries();
+}
+function renderTags(g) {
+  const c = document.getElementById('tags-'+g); c.innerHTML = '';
+  S[g].forEach((t,i) => {
+    const s = document.createElement('span'); s.className='tag active';
+    s.innerHTML = `${esc(t)} <span class="tag-remove" onclick="removeTag('${g}',${i})">×</span>`;
+    c.appendChild(s);
+  });
+}
+function removeTag(g,i) { S[g].splice(i,1); renderTags(g); buildQueries(); }
+function addPreset(g,v) { if(!S[g].includes(v)){ S[g].push(v); renderTags(g); buildQueries(); } }
+function toggleGroup(g,v,cid,cls) {
+  const i = S[g].indexOf(v);
+  if(i===-1) S[g].push(v); else S[g].splice(i,1);
+  document.querySelectorAll(`#${cid} .tag`).forEach(t => {
+    const lbl = t.textContent.replace('×','').trim();
+    S[g].includes(lbl) ? t.classList.add(cls) : (t.classList.remove(cls), t.classList.remove('active'));
+  });
+  buildQueries();
+}
+
+function buildQueries() {
+  const t = LANGS[lang];
+  const useA = document.getElementById('tog-a').checked;
+  const useB = document.getElementById('tog-b').checked;
+  const useExc = document.getElementById('tog-exc').checked;
+
+  const vagaGroups = [];
+  if (useA) vagaGroups.push({label:'A', terms: t.vagaA});
+  if (useB) vagaGroups.push({label:'B', terms: t.vagaB});
+  if (!vagaGroups.length) vagaGroups.push(null);
+
+  const techChunks = S.techs.length ? chunk(S.techs, 3) : [null];
+  const roles = S.roles.length ? S.roles : [null];
+
+  const modelPart = S.models.length ? '('+S.models.join(' OR ')+')' : null;
+  const contractPart = S.contracts.length ? '('+S.contracts.join(' OR ')+')' : null;
+  const senPart = S.seniority.length ? '('+S.seniority.join(' OR ')+')' : null;
+  const excStr = useExc ? t.excStr : null;
+
+  const queries = [];
+
+  roles.forEach(role => {
+    techChunks.forEach(techChunk => {
+      vagaGroups.forEach(vagaGroup => {
+        const parts = [];
+        if (role) parts.push(role.includes(' ') ? `"${role}"` : role);
+        if (techChunk) parts.push('('+techChunk.join(' OR ')+')');
+        if (vagaGroup) parts.push('('+vagaGroup.terms.join(' OR ')+')');
+        if (modelPart) parts.push(modelPart);
+        if (contractPart) parts.push(contractPart);
+        if (senPart) parts.push(senPart);
+        if (!parts.length) return;
+        let raw = parts.join(' AND ');
+        if (excStr) raw += ' ' + excStr;
+
+        // Safety: LinkedIn breaks when total boolean operators (AND + OR + NOT) exceeds ~5
+        // AND operators = parts.length - 1
+        // OR operators = sum of (terms - 1) per group
+        // NOT = 1 if exclusion is active
+        const groupORcounts = [];
+        if (techChunk) groupORcounts.push(techChunk.length);
+        if (vagaGroup) groupORcounts.push(vagaGroup.terms.length);
+        if (S.models.length) groupORcounts.push(S.models.length);
+        if (S.contracts.length) groupORcounts.push(S.contracts.length);
+        if (S.seniority.length) groupORcounts.push(S.seniority.length);
+        const maxOR = groupORcounts.length ? Math.max(...groupORcounts) : 0;
+        const totalOR = groupORcounts.reduce((sum, n) => sum + (n - 1), 0);
+        const totalAND = parts.length - 1; // AND between groups
+        const totalNOT = excStr ? 1 : 0;
+        const totalOps = totalOR + totalAND + totalNOT;
+        const safe = totalOps <= 5;
+        const safeReason = !safe
+          ? t.safeReasons.totalOps(totalOps)
+          : null;
+
+        queries.push({
+          raw,
+          parts: parts.length,
+          chars: raw.length,
+          maxOR,
+          totalOR,
+          totalOps,
+          safe,
+          safeReason,
+          role: role || null,
+          tech: techChunk ? techChunk.join(', ') : null,
+          vaga: vagaGroup ? t.vagaLabel(vagaGroup.label) : null
+        });
+      });
+    });
+  });
+
+  window._q = queries;
+  renderQList(queries);
+}
+
+function renderQList(qs) {
+  const t = LANGS[lang];
+  const list = document.getElementById('q-list');
+  const cnt = document.getElementById('q-count');
+  if (!qs.length) {
+    list.innerHTML = `<div class="empty-state"><p>${t.emptyState}</p></div>`;
+    cnt.innerHTML = t.queriesEmpty;
+    return;
+  }
+  cnt.innerHTML = t.queriesHint(qs.length);
+
+  list.innerHTML = qs.map((q,i) => {
+    const pretty = esc(q.raw)
+      .replace(/\bAND\b/g,'<span class="q-op"> AND </span>')
+      .replace(/\bOR\b/g,'<span class="q-op"> OR </span>')
+      .replace(/\bNOT\b/g,'<span class="q-not"> NOT </span>');
+    const lbl = [q.role, q.tech, q.vaga].filter(Boolean).join(' • ') || `Query ${i+1}`;
+    return `
+<div class="query-card">
+  <div class="query-card-top">
+    <div class="query-num">
+      Query ${i+1}
+      <span class="qbadge ${q.safe?'qbadge-safe':'qbadge-warn'}" title="${q.safeReason||''}">${q.safe ? t.safe : '⚠ '+q.safeReason}</span>
+    </div>
+    <span class="query-label">${esc(lbl)}</span>
+  </div>
+  <div class="query-text">${pretty}</div>
+  <div class="query-footer">
+    <div class="query-meta">
+      <span>AND: <strong>${q.parts - 1}</strong></span>
+      <span>OR: <strong>${q.totalOR}</strong></span>
+      <span>operadores: <strong style="${q.totalOps>5?'color:var(--danger)':''}">${q.totalOps}/5</strong></span>
+      <span>${t.charslabel}: <strong style="${q.chars>=200?'color:var(--warn)':''}">${q.chars}</strong></span>
+    </div>
+    <div class="query-actions">
+      <button class="qbtn qbtn-copy" onclick="copyQ(${i})">${t.btnCopy}</button>
+      <button class="qbtn qbtn-li" onclick="openLI(${i})">${t.btnLI}</button>
+    </div>
+  </div>
+</div>`;
+  }).join('');
+}
+
+function chunk(arr, n) {
+  const r = [];
+  for(let i=0;i<arr.length;i+=n) r.push(arr.slice(i,i+n));
+  return r;
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function copyQ(i) { navigator.clipboard.writeText(window._q[i].raw).then(()=>flash()); }
+function openLI(i) {
+  window.open('https://www.linkedin.com/search/results/content/?keywords='+encodeURIComponent(window._q[i].raw)+'&sortBy=%22date_posted%22','_blank');
+}
+function openAll() {
+  if(!window._q||!window._q.length) return;
+  window._q.forEach((q,i) => setTimeout(()=>openLI(i), i*450));
+}
+function clearAll() {
+  S.roles=[]; S.techs=[]; S.models=[]; S.contracts=[]; S.seniority=[];
+  ['roles','techs'].forEach(renderTags);
+  document.querySelectorAll('.tag').forEach(t=>t.classList.remove('active','active-purple'));
+  document.getElementById('tog-a').checked=true;
+  document.getElementById('tog-b').checked=false;
+  document.getElementById('tog-exc').checked=false;
+  buildQueries();
+}
+function flash() {
+  const el=document.getElementById('flash');
+  el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1500);
+}
+
+// ── i18n ──
+const LANGS = {
+  pt: {
+    subtitle: '// divide para conquistar • sem quebrar o buscador',
+    h1: 'Construtor de <span>Busca Booleana</span>',
+    bannerTitle: '⚠️ Por que o LinkedIn quebra buscas longas?',
+    bannerBody: `O LinkedIn tem <strong>limites não documentados</strong> no buscador booleano. Quando você encadeia muitos termos numa query só, o algoritmo <strong>silenciosamente ignora parte deles</strong> — e você perde vagas sem perceber.<br><br>Exemplo que quebra: <code>(Eng. Dados) AND (Vaga OR Oportunidade OR Hiring OR "We're hiring" OR Contratação)</code><br>O apóstrofo em <code>"We're"</code> dentro de aspas <strong>quebra o parser</strong>, e muitos OR seguidos <strong>excedem o limite interno</strong> do LinkedIn.`,
+    rules: ['Mais de ~3–4 OR num grupo = resultados incompletos','Apóstrofo dentro de aspas = parser quebra','Query muito longa (~200+ chars) = LinkedIn trunca silenciosamente','Solução: várias queries curtas em abas separadas'],
+    cardRole:'Cargo / Função', hintRole:'cada cargo gera uma linha de queries própria', phRole:'ex: Engenheiro de Dados',
+    cardTech:'Tecnologias / Stacks', hintTech:'agrupadas de 3 em 3 — cada grupo vira uma query', phTech:'ex: Python, Databricks, AWS',
+    cardModel:'Modelo de Trabalho', hintModel:'adicionado como AND em cada query',
+    cardContract:'Tipo de Contratação', hintContract:'adicionado como AND em cada query',
+    cardSen:'Senioridade', hintSen:'adicionado como AND em cada query',
+    cardVaga:'Termos de Vaga', hintVaga:'cada grupo fica seguro — max 3 termos simples, sem apóstrofo',
+    togA:'grupo A', togATerms:'Vaga · Oportunidade · Hiring',
+    togB:'grupo B', togBTerms:'Contratando · Recrutamento · Aberta',
+    togExc:'excluir cursos e bootcamps',
+    queriesTitle:'Queries geradas',
+    queriesHint:(n)=>`<strong>${n}</strong> quer${n===1?'y':'ies'} — rode cada uma em abas separadas no LinkedIn para cobrir mais resultados`,
+    btnOpenAll:'🚀 Abrir todas no LinkedIn', btnClearAll:'✕ Limpar tudo',
+    btnCopy:'📋 Copiar', btnLI:'🔗 LinkedIn',
+    emptyState:'← configure os filtros acima para gerar as queries',
+    safe:'✓ segura', andGroups:'grupos AND', maxORlabel:'max OR/grupo', charslabel:'chars',
+    safeReasons:{ totalOps:(n)=>`${n} operadores no total (máx 5)` },
+    vagaLabel:(l)=>'grupo '+l,
+    presetLabels:['Eng. Dados','Data Engineer','Analista Dados','Data Analyst','Cientista Dados','Data Scientist','Dev Python','Backend Dev','Full Stack','DevOps','MLOps','Analytics Eng'],
+    presetVals:['Engenheiro de Dados','Data Engineer','Analista de Dados','Data Analyst','Cientista de Dados','Data Scientist','Desenvolvedor Python','Backend Developer','Full Stack','DevOps','MLOps','Analytics Engineer'],
+    models:['Remoto','Remote','Híbrido','Presencial'],
+    contracts:['CLT','PJ','Freelance','Estágio','Trainee'],
+    seniority:['Junior','Pleno','Senior','Lead','Staff'],
+    vagaA:['Vaga','Oportunidade','Hiring'],
+    vagaB:['Contratando','Recrutamento','Aberta'],
+    excStr:'NOT (curso OR bootcamp OR formacao OR treinamento)',
+  },
+  en: {
+    subtitle:'// split to conquer • without breaking the search engine',
+    h1: 'Boolean <span>Search Builder</span>',
+    bannerTitle:'⚠️ Why does LinkedIn break long searches?',
+    bannerBody:`LinkedIn has <strong>undocumented limits</strong> in its boolean search. When you chain too many terms in one query, the algorithm <strong>silently ignores some of them</strong> — and you miss job posts without knowing.<br><br>Example that breaks: <code>(Data Eng) AND (Job OR Opportunity OR Hiring OR "We're hiring" OR Contract)</code><br>The apostrophe in <code>"We're"</code> inside quotes <strong>breaks the parser</strong>, and too many chained ORs <strong>exceed LinkedIn's internal limit</strong>.`,
+    rules:['More than ~3–4 OR in one group = incomplete results',"Apostrophe inside quotes (e.g. \"We're\") = parser breaks",'Query too long (~200+ chars) = LinkedIn silently truncates','Solution: several short queries opened in separate tabs'],
+    cardRole:'Role / Position', hintRole:'each role generates its own query line', phRole:'e.g. Data Engineer',
+    cardTech:'Technologies / Stacks', hintTech:'grouped in sets of 3 — each group becomes a query', phTech:'e.g. Python, Databricks, AWS',
+    cardModel:'Work Model', hintModel:'added as AND to each query',
+    cardContract:'Contract Type', hintContract:'added as AND to each query',
+    cardSen:'Seniority', hintSen:'added as AND to each query',
+    cardVaga:'Job Terms', hintVaga:'each group stays safe — max 3 simple terms, no apostrophes',
+    togA:'group A', togATerms:'Job · Opportunity · Hiring',
+    togB:'group B', togBTerms:'Recruiting · Opening · Now hiring',
+    togExc:'exclude courses & bootcamps',
+    queriesTitle:'Generated queries',
+    queriesHint:(n)=>`<strong>${n}</strong> quer${n===1?'y':'ies'} — run each one in separate LinkedIn tabs for more coverage`,
+    btnOpenAll:'🚀 Open all on LinkedIn', btnClearAll:'✕ Clear all',
+    btnCopy:'📋 Copy', btnLI:'🔗 LinkedIn',
+    emptyState:'← configure the filters above to generate queries',
+    safe:'✓ safe', andGroups:'AND groups', maxORlabel:'max OR/group', charslabel:'chars',
+    safeReasons:{ totalOps:(n)=>`${n} operators total (max 5)` },
+    vagaLabel:(l)=>'group '+l,
+    presetLabels:['Data Engineer','Software Eng','Data Analyst','Data Scientist','Backend Dev','Full Stack','DevOps','MLOps','Analytics Eng','Product Manager','ML Engineer','Platform Eng'],
+    presetVals:['Data Engineer','Software Engineer','Data Analyst','Data Scientist','Backend Developer','Full Stack Developer','DevOps','MLOps','Analytics Engineer','Product Manager','ML Engineer','Platform Engineer'],
+    models:['Remote','Hybrid','On-site'],
+    contracts:['Full-time','Part-time','Contract','Internship','Freelance'],
+    seniority:['Junior','Mid-level','Senior','Lead','Staff'],
+    vagaA:['Job','Opportunity','Hiring'],
+    vagaB:['Recruiting','Opening','Now hiring'],
+    excStr:'NOT (course OR bootcamp OR training OR certification)',
+  }
+};
+
+let lang = 'pt';
+
+function toggleLang() {
+  lang = lang==='pt' ? 'en' : 'pt';
+  document.getElementById('opt-pt').classList.toggle('active', lang==='pt');
+  document.getElementById('opt-en').classList.toggle('active', lang==='en');
+  applyLang();
+}
+
+function applyLang() {
+  const t = LANGS[lang];
+  document.getElementById('hdr-h1').innerHTML = t.h1;
+  document.getElementById('hdr-subtitle').textContent = t.subtitle;
+  document.getElementById('banner-title').textContent = t.bannerTitle;
+  document.getElementById('banner-body').innerHTML = t.bannerBody;
+  document.querySelectorAll('.limit-rule-text').forEach((el,i) => { if(t.rules[i]) el.textContent = t.rules[i]; });
+  setText('ct-role',t.cardRole); setText('hint-role',t.hintRole); setAttr('input-role','placeholder',t.phRole);
+  setText('ct-tech',t.cardTech); setText('hint-tech',t.hintTech); setAttr('input-tech','placeholder',t.phTech);
+  setText('ct-model',t.cardModel); setText('hint-model',t.hintModel);
+  setText('ct-contract',t.cardContract); setText('hint-contract',t.hintContract);
+  setText('ct-sen',t.cardSen); setText('hint-sen',t.hintSen);
+  setText('ct-vaga',t.cardVaga); setText('hint-vaga',t.hintVaga);
+  document.getElementById('tog-a-label').innerHTML = `${t.togA} &nbsp;<span style="color:var(--accent3);font-size:0.7em">${t.togATerms}</span>`;
+  document.getElementById('tog-b-label').innerHTML = `${t.togB} &nbsp;<span style="color:var(--accent3);font-size:0.7em">${t.togBTerms}</span>`;
+  setText('tog-exc-label',t.togExc);
+  setText('btn-open-all',t.btnOpenAll); setText('btn-clear-all-btn',t.btnClearAll);
+  setText('queries-title-txt',t.queriesTitle);
+  // Rebuild presets
+  document.getElementById('presets-roles').innerHTML = t.presetLabels.map((lbl,i) =>
+    `<span class="preset-chip" onclick="addPreset('roles','${t.presetVals[i]}')">${lbl}</span>`
+  ).join('');
+  // Rebuild fixed tag groups (reset selections that don't exist in new lang)
+  S.models = S.models.filter(v => t.models.includes(v));
+  S.contracts = S.contracts.filter(v => t.contracts.includes(v));
+  S.seniority = S.seniority.filter(v => t.seniority.includes(v));
+  rebuildFixedTags('tags-model', t.models, 'models', 'active-purple');
+  rebuildFixedTags('tags-contract', t.contracts, 'contracts', 'active-purple');
+  rebuildFixedTags('tags-seniority', t.seniority, 'seniority', 'active');
+  buildQueries();
+}
+
+function rebuildFixedTags(containerId, items, group, cls) {
+  document.getElementById(containerId).innerHTML = items.map(v =>
+    `<span class="tag${S[group].includes(v)?' '+cls:''}" onclick="toggleGroup('${group}','${v}','${containerId}','${cls}')">${v}</span>`
+  ).join('');
+}
+
+function setText(id, txt) { const el=document.getElementById(id); if(el) el.textContent=txt; }
+function setAttr(id, attr, val) { const el=document.getElementById(id); if(el) el.setAttribute(attr,val); }
+
+buildQueries();
+</script>
+</body>
+</html>
